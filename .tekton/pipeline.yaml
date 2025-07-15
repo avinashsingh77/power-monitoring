@@ -7,6 +7,7 @@ metadata:
     pipelinesascode.tekton.dev/on-target-branch: "[main]"
     pipelinesascode.tekton.dev/task: "[git-clone, buildah, openshift-client]"
 spec:
+  serviceAccountName: pipeline
   params:
     - name: repo-url
       value: "{{repo_url}}"
