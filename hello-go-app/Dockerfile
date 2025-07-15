@@ -1,5 +1,5 @@
 FROM golang:1.21-alpine AS builder
-# Dummy change
+# Dummy changes
 WORKDIR /app
 COPY go.mod ./
 COPY . .
