@@ -6,18 +6,18 @@ metadata:
     pipelinesascode.tekton.dev/on-event: "[pull_request]"
     pipelinesascode.tekton.dev/on-target-branch: "[main]"
     pipelinesascode.tekton.dev/task: "[git-clone, buildah, openshift-client]"
-  spec:
-    params:
-      - name: repo-url
-        value: "{{repo_url}}"
-      - name: revision
-        value: "{{revision}}"
-      - name: image-repo
-        value: "quay.io/cloudbuddy7715/hello-go-app"
-      - name: app-namespace
-        value: "pwr-mntrng-demo"
-      - name: prometheus-url
-        value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com/api"
+spec:
+  params:
+    - name: repo-url
+      value: "{{repo_url}}"
+    - name: revision
+      value: "{{revision}}"
+    - name: image-repo
+      value: "quay.io/cloudbuddy7715/hello-go-app"
+    - name: app-namespace
+      value: "pwr-mntrng-demo"
+    - name: prometheus-url
+      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com/api"
   pipelineSpec:
     params:
       - name: repo-url
