@@ -55,9 +55,13 @@ if __name__ == "__main__":
         print(f"Successfully connected to Prometheus at {PROMETHEUS_URL}")
 
         # --- Define your container/pod details ---
-        target_namespace = "pwr-mntrng-test" # Use the values from your error message
-        target_pod_name = "hello-go-app-optimized-5bb95c9549-mvpgz"
-        target_container_name = "hello-go-app"
+        target_namespace = os.getenv("TARGET_NAMESPACE", "pwr-mntrng-test") # Use the values from your error message
+        target_pod_name = os.getenv("TARGET_POD_NAME")
+        target_container_name = os.getenv("TARGET_CONTAINER_NAME", "hello-go-app")
+
+        if not target_pod_name:
+            print("Error: TARGET_POD_NAME environment variable not set.")
+            exit(1)
 
         KEPLER_JOULES_METRIC = "kepler_container_package_joules_total"
 
