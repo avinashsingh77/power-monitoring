@@ -38,7 +38,8 @@ spec:
       - name: fetch-repository
         taskRef:
           name: git-clone
-          kind: ClusterTask
+          kind: Task
+          namespace: openshift-pipelines
         params:
           - name: url
             value: $(params.repo-url)
@@ -51,7 +52,8 @@ spec:
       - name: build-and-push-image
         taskRef:
           name: buildah
-          kind: ClusterTask
+          kind: Task
+          namespace: openshift-pipelines
         runAfter:
           - fetch-repository
         params:
@@ -66,7 +68,8 @@ spec:
       - name: deploy-application
         taskRef:
           name: openshift-client
-          kind: ClusterTask
+          kind: Task
+          namespace: openshift-pipelines
         runAfter:
           - build-and-push-image
         params:
