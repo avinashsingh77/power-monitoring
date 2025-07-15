@@ -1,0 +1,103 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: go-app-pipelinerun-on-pr
+  annotations:
+    pipelinesascode.tekton.dev/on-event: "[pull_request]"
+    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+spec:
+  params:
+    - name: repo-url
+      value: "{{repo_url}}"
+    - name: revision
+      value: "{{revision}}"
+    - name: image-repo
+      value: "quay.io/cloudbuddy7715/hello-go-app"
+    - name: app-namespace
+      value: "pwr-mntrng-demo"
+    - name: prometheus-url
+      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com/api"
+  pipelineSpec:
+    params:
+      - name: repo-url
+        type: string
+      - name: revision
+        type: string
+      - name: image-repo
+        type: string
+      - name: image-tag
+        type: string
+        default: "latest"
+      - name: app-namespace
+        type: string
+      - name: prometheus-url
+        type: string
+    workspaces:
+      - name: shared-workspace
+    tasks:
+      - name: fetch-repository
+        taskRef:
+          name: git-clone
+          kind: ClusterTask
+        params:
+          - name: url
+            value: $(params.repo-url)
+          - name: revision
+            value: $(params.revision)
+        workspaces:
+          - name: output
+            workspace: shared-workspace
+
+      - name: build-and-push-image
+        taskRef:
+          name: buildah
+          kind: ClusterTask
+        runAfter:
+          - fetch-repository
+        params:
+          - name: IMAGE
+            value: "$(params.image-repo):$(params.image-tag)"
+          - name: DOCKERFILE
+            value: ./Dockerfile
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+
+      - name: deploy-application
+        taskRef:
+          name: openshift-client
+          kind: ClusterTask
+        runAfter:
+          - build-and-push-image
+        params:
+          - name: SCRIPT
+            value: |
+              IMAGE_URL="$(params.image-repo):$(params.image-tag)"
+              sed -i "s|image:.*|image: ${IMAGE_URL}|g" $(workspaces.manifest-dir.path)/openshift-deployment/deployment.yaml
+              oc apply -f $(workspaces.manifest-dir.path)/openshift-deployment/
+        workspaces:
+          - name: manifest-dir
+            workspace: shared-workspace
+
+      - name: query-power-consumption
+        taskRef:
+          name: query-power-metrics-task
+        runAfter:
+          - deploy-application
+        params:
+          - name: app-namespace
+            value: $(params.app-namespace)
+          - name: prometheus-url
+            value: $(params.prometheus-url)
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+  workspaces:
+  - name: shared-workspace
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
