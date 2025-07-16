@@ -17,6 +17,11 @@ spec:
     - name: app-namespace
       description: The namespace of the application.
       type: string
+  results:
+    - name: avg-watts
+      description: The average power consumption in Watts over the last 5 minutes.
+    - name: total-joules
+      description: The total energy consumed in Joules over the last 5 minutes.
   steps:
     - name: query-power-metrics
       image: registry.access.redhat.com/ubi9/python-311
@@ -51,7 +56,18 @@ spec:
         export TARGET_NAMESPACE=$(params.app-namespace)
         export TARGET_CONTAINER_NAME=$(params.app-name)
 
-        python $(workspaces.source.path)/scripts/query-power-metrics.py
+        # Run the python script and capture its output
+        METRICS=$(python $(workspaces.source.path)/scripts/query-power-metrics.py)
+
+        # Extract the values and write them to the Tekton results
+        AVG_WATTS=$(echo "${METRICS}" | grep "AVG_WATTS:" | cut -d ' ' -f 2)
+        TOTAL_JOULES=$(echo "${METRICS}" | grep "TOTAL_JOULES:" | cut -d ' ' -f 2)
+
+        echo -n "${AVG_WATTS}" | tee $(results.avg-watts.path)
+        echo -n "${TOTAL_JOULES}" | tee $(results.total-joules.path)
+
+        echo "Average Watts: ${AVG_WATTS}"
+        echo "Total Joules: ${TOTAL_JOULES}"
 
       volumeMounts:
         - name: dshm
