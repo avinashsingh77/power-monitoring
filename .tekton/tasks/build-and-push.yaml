@@ -1,0 +1,68 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-and-push-image
+  labels:
+    app.kubernetes.io/version: "0.1"
+spec:
+  params:
+    # Removed git-url as git-clone task handles it
+    - name: image-repo
+      description: The name of the image to build (e.g., quay.io/myuser/my-app)
+      type: string
+    - name: image-tag
+      description: The tag for the image (e.g., latest, pr-123)
+      type: string
+      default: "latest"
+    - name: dockerfile-path
+      description: The path to the Dockerfile in the repository
+      type: string
+      default: "Dockerfile"
+    - name: context-dir
+      description: The build context directory
+      type: string
+      default: "." # Defaults to the root of the cloned repository
+
+  workspaces:
+    - name: source
+      description: Workspace for the cloned source code (pre-populated by another task)
+
+  steps:
+    # Removed the 'clone-source' step as it's handled by a preceding task
+
+    - name: build-and-push-image
+      image: quay.io/buildah/stable:v1.30.0 # Use a specific, stable Buildah image version
+      securityContext:
+        privileged: false
+        runAsUser: 1000
+        allowPrivilegeEscalation: true
+        capabilities:
+          add:
+            - CHOWN
+            - SETGID
+            - SETUID
+            - SETFCAP
+      script: |
+        #!/usr/bin/env sh
+        set -eux
+
+        IMAGE_FQDN=$(params.image-repo):$(params.image-tag)
+        BUILD_CONTEXT=$(workspaces.source.path)/$(params.context-dir)
+        DOCKERFILE_PATH=$(workspaces.source.path)/$(params.dockerfile-path)
+
+        echo "Building image: ${IMAGE_FQDN}"
+        echo "Build context: ${BUILD_CONTEXT}"
+        echo "Dockerfile path: ${DOCKERFILE_PATH}"
+
+        buildah bud \
+          --tls-verify=false \
+          -f "${DOCKERFILE_PATH}" \
+          -t "${IMAGE_FQDN}" \
+          "${BUILD_CONTEXT}"
+
+        echo "Pushing image: ${IMAGE_FQDN}"
+        buildah push \
+          --tls-verify=false \
+          "${IMAGE_FQDN}" \
+          "docker://${IMAGE_FQDN}"
+      workingDir: $(workspaces.source.path)

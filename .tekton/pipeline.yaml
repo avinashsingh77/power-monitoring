@@ -53,16 +53,14 @@ spec:
 
       - name: build-and-push-image
         taskRef:
-          name: buildah
-          kind: Task
-          namespace: openshift-pipelines
+          name: build-and-push-image
         runAfter:
           - fetch-repository
         params:
-          - name: IMAGE
-            value: "$(params.image-repo):$(params.image-tag)"
-          - name: DOCKERFILE
-            value: ./Dockerfile
+          - name: image-repo
+            value: $(params.image-repo)
+          - name: image-tag
+            value: $(params.image-tag)
         workspaces:
           - name: source
             workspace: shared-workspace
@@ -94,6 +92,8 @@ spec:
             value: $(params.app-namespace)
           - name: prometheus-url
             value: $(params.prometheus-url)
+          - name: app-name
+            value: "hello-go-app"
         workspaces:
           - name: source
             workspace: shared-workspace
