@@ -14,7 +14,7 @@ spec:
     - name: revision
       value: "{{revision}}"
     - name: image-repo
-      value: "quay.io/cloudbuddy7715/hello-go-app"
+      value: "image-registry.openshift-image-registry.svc:5000/pwr-mntrng-demo/hello-go-app"
     - name: dockerfile-path
       value: "hello-go-app/Dockerfile"
     - name: context-dir
