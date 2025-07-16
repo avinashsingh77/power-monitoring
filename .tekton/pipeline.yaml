@@ -85,9 +85,14 @@ spec:
         params:
           - name: SCRIPT
             value: |
+              set -ex
               IMAGE_URL="$(params.image-repo):$(params.image-tag)"
               sed -i "s|image:.*|image: ${IMAGE_URL}|g" $(workspaces.manifest-dir.path)/openshift-deployment/deployment.yaml
+              echo "Applying deployment..."
               oc apply -f $(workspaces.manifest-dir.path)/openshift-deployment/
+              
+              echo "Waiting for deployment to complete..."
+              oc rollout status deployment/hello-go-app -n $(params.app-namespace) --timeout=5m
         workspaces:
           - name: manifest-dir
             workspace: shared-workspace

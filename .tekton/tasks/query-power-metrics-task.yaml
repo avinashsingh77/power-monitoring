@@ -23,7 +23,15 @@ spec:
       script: |
         #!/bin/bash
         set -e
-        pip install prometheus-api-client openshift-client
+
+        echo "Installing oc CLI..."
+        curl -LO https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+        tar -xf openshift-client-linux.tar.gz
+        mv oc /usr/local/bin/
+        rm kubectl README.md openshift-client-linux.tar.gz
+        echo "oc CLI installed."
+
+        pip install prometheus-api-client
         
         export PROMETHEUS_URL=$(params.prometheus-url)
         # This assumes the task is running in a pod with a service account that has permissions to get pods
