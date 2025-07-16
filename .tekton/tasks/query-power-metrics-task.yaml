@@ -19,7 +19,7 @@ spec:
       type: string
   steps:
     - name: query-power-metrics
-      image: registry.access.redhat.com/ubi8/python-39
+      image: registry.access.redhat.com/ubi9/python-311
       script: |
         #!/bin/bash
         set -e
