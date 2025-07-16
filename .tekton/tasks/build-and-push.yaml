@@ -45,6 +45,7 @@ spec:
       script: |
         #!/usr/bin/env sh
         set -eux
+        export STORAGE_DRIVER=vfs
 
         IMAGE_FQDN=$(params.image-repo):$(params.image-tag)
         BUILD_CONTEXT=$(workspaces.source.path)/$(params.context-dir)
