@@ -49,7 +49,7 @@ if __name__ == "__main__":
     }
 
     try:
-        prom = PrometheusConnect(url="https://"+PROMETHEUS_URL, headers=headers, disable_ssl=True)
+        prom = PrometheusConnect(url=PROMETHEUS_URL, headers=headers, disable_ssl=True)
         print(f"Successfully connected to Prometheus at {PROMETHEUS_URL}", file=sys.stderr)
 
         target_namespace = os.getenv("TARGET_NAMESPACE", "pwr-mntrng-test")
