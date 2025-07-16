@@ -7,9 +7,6 @@ spec:
     - name: source
       description: The workspace containing the git repository.
   params:
-    - name: prometheus-url
-      description: The URL of the Prometheus server
-      type: string
     - name: app-name
       description: The name of the application to query for.
       type: string
@@ -49,7 +46,15 @@ spec:
 
         pip install prometheus-api-client
         
-        export PROMETHEUS_URL=$(params.prometheus-url)
+        echo "Discovering Prometheus URL..."
+        PROMETHEUS_HOST=$(oc get route prometheus-k8s -n openshift-monitoring -o jsonpath='{.spec.host}')
+        if [ -z "${PROMETHEUS_HOST}" ]; then
+          echo "Error: Could not find Prometheus route."
+          exit 1
+        fi
+        export PROMETHEUS_URL="https://${PROMETHEUS_HOST}"
+        echo "Prometheus URL set to: ${PROMETHEUS_URL}"
+
         # This assumes the task is running in a pod with a service account that has permissions to get pods
         export PROMETHEUS_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
         export TARGET_POD_NAME=$(oc get pods -n $(params.app-namespace) -l app=$(params.app-name) -o jsonpath='{.items[0].metadata.name}')

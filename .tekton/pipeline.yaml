@@ -21,8 +21,6 @@ spec:
       value: "hello-go-app"
     - name: app-namespace
       value: "pwr-mntrng-demo"
-    - name: prometheus-url
-      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com"
   pipelineSpec:
     params:
       - name: repo-url
@@ -35,8 +33,6 @@ spec:
         type: string
         default: "latest"
       - name: app-namespace
-        type: string
-      - name: prometheus-url
         type: string
       - name: dockerfile-path
         type: string
@@ -105,8 +101,6 @@ spec:
         params:
           - name: app-namespace
             value: $(params.app-namespace)
-          - name: prometheus-url
-            value: $(params.prometheus-url)
           - name: app-name
             value: "hello-go-app"
         workspaces:
