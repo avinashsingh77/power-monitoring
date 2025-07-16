@@ -15,6 +15,10 @@ spec:
       value: "{{revision}}"
     - name: image-repo
       value: "quay.io/cloudbuddy7715/hello-go-app"
+    - name: dockerfile-path
+      value: "hello-go-app/Dockerfile"
+    - name: context-dir
+      value: "hello-go-app"
     - name: app-namespace
       value: "pwr-mntrng-demo"
     - name: prometheus-url
@@ -34,6 +38,12 @@ spec:
         type: string
       - name: prometheus-url
         type: string
+      - name: dockerfile-path
+        type: string
+        default: "hello-go-app/Dockerfile"
+      - name: context-dir
+        type: string
+        default: "hello-go-app"
     workspaces:
       - name: shared-workspace
     tasks:
