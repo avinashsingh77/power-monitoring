@@ -22,7 +22,7 @@ spec:
     - name: app-namespace
       value: "pwr-mntrng-demo"
     - name: prometheus-url
-      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com/api"
+      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com"
   pipelineSpec:
     params:
       - name: repo-url
