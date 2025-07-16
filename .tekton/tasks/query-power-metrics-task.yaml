@@ -24,12 +24,23 @@ spec:
         #!/bin/bash
         set -e
 
-        echo "Installing oc CLI..."
+        # Create a local bin directory in the workspace, which is guaranteed to be writable
+        LOCAL_BIN_DIR="$(workspaces.source.path)/bin"
+        mkdir -p "${LOCAL_BIN_DIR}"
+        
+        echo "Installing oc CLI to ${LOCAL_BIN_DIR}..."
         curl -LO https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
         tar -xf openshift-client-linux.tar.gz
-        mv oc /usr/local/bin/
+        # Move oc to the local, writable bin directory
+        mv oc "${LOCAL_BIN_DIR}/"
         rm kubectl README.md openshift-client-linux.tar.gz
+
+        # Prepend the local bin directory to the PATH
+        export PATH="${LOCAL_BIN_DIR}:${PATH}"
         echo "oc CLI installed."
+        
+        # Verify oc can be found
+        which oc
 
         pip install prometheus-api-client
         
