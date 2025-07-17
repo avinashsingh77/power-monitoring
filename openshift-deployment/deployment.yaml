@@ -14,6 +14,7 @@ spec:
     spec:
       containers:
       - name: hello-go-app
-        image: quay.io/rh-ee-anataraj/hello-go-app:latest
+        # image: quay.io/rh-ee-anataraj/hello-go-app:latest
+        image: image-registry.openshift-image-registry.svc:5000/pwr-mntrng-demo/hello-go-app:latest
         ports:
         - containerPort: 8080
