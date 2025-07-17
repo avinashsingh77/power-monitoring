@@ -1,5 +1,5 @@
 FROM docker.io/library/golang:1.21-alpine AS builder
-# Dummy changes
+# Dummy change
 WORKDIR /app
 COPY go.mod ./
 COPY . .
