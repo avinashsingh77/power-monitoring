@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"hello-go-app/pkg/hello"
-	"runtime"
+//	"runtime"
 	"time"
 )
 
