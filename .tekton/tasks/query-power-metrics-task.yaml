@@ -1,0 +1,83 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: query-power-metrics-task
+spec:
+  workspaces:
+    - name: source
+      description: The workspace containing the git repository.
+  params:
+    - name: app-name
+      description: The name of the application to query for.
+      type: string
+      default: "hello-go-app"
+    - name: app-namespace
+      description: The namespace of the application.
+      type: string
+  results:
+    - name: avg-watts
+      description: The average power consumption in Watts over the last 5 minutes.
+    - name: total-joules
+      description: The total energy consumed in Joules over the last 5 minutes.
+  steps:
+    - name: query-power-metrics
+      image: registry.access.redhat.com/ubi9/python-311
+      script: |
+        #!/bin/bash
+        set -e
+
+        # Create a local bin directory in the workspace, which is guaranteed to be writable
+        LOCAL_BIN_DIR="$(workspaces.source.path)/bin"
+        mkdir -p "${LOCAL_BIN_DIR}"
+        
+        echo "Installing oc CLI to ${LOCAL_BIN_DIR}..."
+        curl -LO https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+        tar -xf openshift-client-linux.tar.gz
+        # Move oc to the local, writable bin directory
+        mv oc "${LOCAL_BIN_DIR}/"
+        rm kubectl README.md openshift-client-linux.tar.gz
+
+        # Prepend the local bin directory to the PATH
+        export PATH="${LOCAL_BIN_DIR}:${PATH}"
+        echo "oc CLI installed."
+        
+        # Verify oc can be found
+        which oc
+
+        pip install prometheus-api-client
+        
+        echo "Discovering Prometheus URL..."
+        PROMETHEUS_HOST=$(oc get route prometheus-k8s -n openshift-monitoring -o jsonpath='{.spec.host}')
+        if [ -z "${PROMETHEUS_HOST}" ]; then
+          echo "Error: Could not find Prometheus route."
+          exit 1
+        fi
+        export PROMETHEUS_URL="https://${PROMETHEUS_HOST}"
+        echo "Prometheus URL set to: ${PROMETHEUS_URL}"
+
+        # This assumes the task is running in a pod with a service account that has permissions to get pods
+        export PROMETHEUS_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        export TARGET_POD_NAME=$(oc get pods -n $(params.app-namespace) -l app=$(params.app-name) -o jsonpath='{.items[0].metadata.name}')
+        export TARGET_NAMESPACE=$(params.app-namespace)
+        export TARGET_CONTAINER_NAME=$(params.app-name)
+
+        # Run the python script and capture its output
+        METRICS=$(python $(workspaces.source.path)/scripts/query-power-metrics.py)
+
+        # Extract the values and write them to the Tekton results
+        AVG_WATTS=$(echo "${METRICS}" | grep "AVG_WATTS:" | cut -d ' ' -f 2)
+        TOTAL_JOULES=$(echo "${METRICS}" | grep "TOTAL_JOULES:" | cut -d ' ' -f 2)
+
+        echo -n "${AVG_WATTS}" | tee $(results.avg-watts.path)
+        echo -n "${TOTAL_JOULES}" | tee $(results.total-joules.path)
+
+        echo "Average Watts: ${AVG_WATTS}"
+        echo "Total Joules: ${TOTAL_JOULES}"
+
+      volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+  volumes:
+    - name: dshm
+      emptyDir:
+        medium: Memory 

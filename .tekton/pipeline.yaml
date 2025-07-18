@@ -5,18 +5,22 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/on-event: "[pull_request]"
     pipelinesascode.tekton.dev/on-target-branch: "[main]"
+    pipelinesascode.tekton.dev/task: "[git-clone, buildah, openshift-client]"
 spec:
+  serviceAccountName: pipeline
   params:
     - name: repo-url
       value: "{{repo_url}}"
     - name: revision
       value: "{{revision}}"
     - name: image-repo
-      value: "quay.io/cloudbuddy7715/hello-go-app"
+      value: "image-registry.openshift-image-registry.svc:5000/pwr-mntrng-demo/hello-go-app"
+    - name: dockerfile-path
+      value: "hello-go-app/Dockerfile"
+    - name: context-dir
+      value: "hello-go-app"
     - name: app-namespace
       value: "pwr-mntrng-demo"
-    - name: prometheus-url
-      value: "https://prometheus-k8s-openshift-monitoring.apps.rosa.xod2t-qhhzp-dci.dchb.p3.openshiftapps.com/api"
   pipelineSpec:
     params:
       - name: repo-url
@@ -30,15 +34,20 @@ spec:
         default: "latest"
       - name: app-namespace
         type: string
-      - name: prometheus-url
+      - name: dockerfile-path
         type: string
+        default: "hello-go-app/Dockerfile"
+      - name: context-dir
+        type: string
+        default: "hello-go-app"
     workspaces:
       - name: shared-workspace
     tasks:
       - name: fetch-repository
         taskRef:
           name: git-clone
-          kind: ClusterTask
+          kind: Task
+          namespace: openshift-pipelines
         params:
           - name: url
             value: $(params.repo-url)
@@ -50,15 +59,14 @@ spec:
 
       - name: build-and-push-image
         taskRef:
-          name: buildah
-          kind: ClusterTask
+          name: build-and-push-image
         runAfter:
           - fetch-repository
         params:
-          - name: IMAGE
-            value: "$(params.image-repo):$(params.image-tag)"
-          - name: DOCKERFILE
-            value: ./Dockerfile
+          - name: image-repo
+            value: $(params.image-repo)
+          - name: image-tag
+            value: $(params.image-tag)
         workspaces:
           - name: source
             workspace: shared-workspace
@@ -66,15 +74,21 @@ spec:
       - name: deploy-application
         taskRef:
           name: openshift-client
-          kind: ClusterTask
+          kind: Task
+          namespace: openshift-pipelines
         runAfter:
           - build-and-push-image
         params:
           - name: SCRIPT
             value: |
+              set -ex
               IMAGE_URL="$(params.image-repo):$(params.image-tag)"
               sed -i "s|image:.*|image: ${IMAGE_URL}|g" $(workspaces.manifest-dir.path)/openshift-deployment/deployment.yaml
+              echo "Applying deployment..."
               oc apply -f $(workspaces.manifest-dir.path)/openshift-deployment/
+              
+              echo "Waiting for deployment to complete..."
+              oc rollout status deployment/hello-go-app -n $(params.app-namespace) --timeout=5m
         workspaces:
           - name: manifest-dir
             workspace: shared-workspace
@@ -87,8 +101,8 @@ spec:
         params:
           - name: app-namespace
             value: $(params.app-namespace)
-          - name: prometheus-url
-            value: $(params.prometheus-url)
+          - name: app-name
+            value: "hello-go-app"
         workspaces:
           - name: source
             workspace: shared-workspace
