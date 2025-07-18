@@ -52,7 +52,7 @@ func main() {
 		}()
 	*/
 
-	// The main loop can now do minimal work in the background.
+	// The main loop can now do minimal work in the background
 	go func() {
 		for {
 			fmt.Println(hello.SayHello())
