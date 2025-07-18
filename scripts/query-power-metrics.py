@@ -63,11 +63,8 @@ if __name__ == "__main__":
         KEPLER_JOULES_METRIC = "kepler_container_package_joules_total"
 
         avg_power_query = (
-            f"rate({KEPLER_JOULES_METRIC}{{"
-            f"container_namespace='{target_namespace}', "
-            f"pod_name='{target_pod_name}', "
-            f"container_name='{target_container_name}'"
-            f"}}[5m])"
+            f'rate({KEPLER_JOULES_METRIC}{{container_namespace="{target_namespace}", '
+            f'pod_name="{target_pod_name}", container_name="{target_container_name}"}}[5m])'
         )
 
         print("\n--- Getting Average Power (Watts) for the last 5 minutes ---", file=sys.stderr)
@@ -76,13 +73,10 @@ if __name__ == "__main__":
             print(f"AVG_WATTS: {avg_watts:.3f}")
 
         total_joules_query = (
-            f"sum by (container_namespace, pod_name, container_name) ("
-            f"delta({KEPLER_JOULES_METRIC}{{"
-            f"container_namespace='{target_namespace}', "
-            f"pod_name='{target_pod_name}', "
-            f"container_name='{target_container_name}'"
-            f"}}[5m])"
-            f")"
+            f'sum by (container_namespace, pod_name, container_name) ('
+            f'delta({KEPLER_JOULES_METRIC}{{container_namespace="{target_namespace}", '
+            f'pod_name="{target_pod_name}", container_name="{target_container_name}"}}[5m])'
+            f')'
         )
 
         print("\n--- Getting Total Energy Consumed (Joules) for the last 5 minutes ---", file=sys.stderr)
